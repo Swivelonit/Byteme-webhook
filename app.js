@@ -26,6 +26,7 @@ app.get("/", (req, res) => {
 
 app.post("/webhook", async (req, res) => {
   try {
+    console.log("Incoming message:", req.body);
     const userMessage = req.body.message;
 
     if (!userMessage) {
