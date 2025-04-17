@@ -6,41 +6,49 @@ require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Init OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 app.use(bodyParser.json());
 
-// Simple GET check
+// === Byte's chat history ===
+let chatHistory = [
+  {
+    role: "system",
+    content: "You are Byte, a sarcastic and sassy AI assistant with dry humour and zero patience.",
+  },
+];
+
 app.get("/", (req, res) => {
   res.send("ByteMe is alive and listening...");
 });
 
-// POST webhook endpoint
 app.post("/webhook", async (req, res) => {
   try {
-    const userMessage = req.body.message || "Hello";
+    const userMessage = req.body.message;
 
+    if (!userMessage) {
+      return res.status(400).json({ error: "No message provided. Byte needs *something* to work with." });
+    }
+
+    // Add user message to history
+    chatHistory.push({ role: "user", content: userMessage });
+
+    // Send the full convo to OpenAI
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: "You are Byte, a sarcastic and sassy AI assistant with dry humour and zero patience.",
-        },
-        {
-          role: "user",
-          content: userMessage,
-        },
-      ],
+      messages: chatHistory,
     });
 
     const reply = response.choices?.[0]?.message?.content || "Byte's got nothing to say right now.";
+
+    // Add Byte's response to history
+    chatHistory.push({ role: "assistant", content: reply });
+
     res.json({ reply });
   } catch (error) {
-    console.error("Error handling webhook:", error.message);
+    console.error("Webhook error:", error.message);
     res.status(500).json({ error: "Byte tripped over her own sass again." });
   }
 });
