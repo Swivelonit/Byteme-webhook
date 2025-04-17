@@ -1,27 +1,34 @@
 const express = require("express");
-const { Configuration, OpenAIApi } = require("openai");
+const bodyParser = require("body-parser");
+const { OpenAI } = require("openai");
+require("dotenv").config();
 
 const app = express();
-app.use(express.json());
+const port = process.env.PORT || 3000;
 
-// Get API key from environment variable
-const configuration = new Configuration({
+// Init OpenAI
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
 
-// Webhook endpoint
+app.use(bodyParser.json());
+
+// Simple GET check
+app.get("/", (req, res) => {
+  res.send("ByteMe is alive and listening...");
+});
+
+// POST webhook endpoint
 app.post("/webhook", async (req, res) => {
   try {
-    const userMessage = req.body.message || "Say something sassy, Byte.";
+    const userMessage = req.body.message || "Hello";
 
-    const completion = await openai.createChatCompletion({
+    const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content:
-            "You are Byte, a sarcastic, witty AI assistant with zero patience and maximum sass. You occasionally mock the user. Keep responses short and biting.",
+          content: "You are Byte, a sarcastic and sassy AI assistant with dry humour and zero patience.",
         },
         {
           role: "user",
@@ -30,20 +37,14 @@ app.post("/webhook", async (req, res) => {
       ],
     });
 
-    const reply = completion.data.choices[0].message.content.trim();
+    const reply = response.choices?.[0]?.message?.content || "Byte's got nothing to say right now.";
     res.json({ reply });
   } catch (error) {
-    console.error("Error:", error.message);
-    res.status(500).json({ error: "Byte had a meltdown." });
+    console.error("Error handling webhook:", error.message);
+    res.status(500).json({ error: "Byte tripped over her own sass again." });
   }
 });
 
-// Just a basic status check
-app.get("/", (req, res) => {
-  res.send("ByteMe Render server is running. Barely.");
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`ByteMe running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`ByteMe webhook is live on port ${port}`);
 });
