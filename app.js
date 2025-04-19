@@ -18,17 +18,22 @@ app.get("/", (req, res) => {
 
 app.post("/webhook", async (req, res) => {
   try {
-    console.log("Incoming message:", req.body);
+    console.log("=== Incoming Payload ===");
+    console.log(JSON.stringify(req.body, null, 2));
 
     const userMessage = req.body.message;
-    const mode = req.body.mode || "RudeByte"; // Default mode
+    const mode = req.body.mode || "RudeByte"; // Default fallback
+
+    console.log("User message:", userMessage);
+    console.log("Requested personality mode:", mode);
 
     if (!userMessage) {
+      console.warn("No message provided.");
       return res.status(400).json({ error: "No message provided. Byte needs *something* to work with." });
     }
 
-    // === Personality-Based System Prompt ===
-    let systemPrompt = "";
+    // === Select System Prompt Based on Personality Mode ===
+    let systemPrompt;
 
     switch (mode) {
       case "PoliteByte":
@@ -46,7 +51,8 @@ app.post("/webhook", async (req, res) => {
         break;
     }
 
-    // === Rebuild chatHistory fresh with updated personality prompt ===
+    console.log("Applied system prompt:\n", systemPrompt);
+
     const chatHistory = [
       { role: "system", content: systemPrompt },
       { role: "user", content: userMessage },
@@ -59,6 +65,8 @@ app.post("/webhook", async (req, res) => {
     });
 
     const reply = response.choices?.[0]?.message?.content || "Byte's got nothing to say right now.";
+
+    console.log("OpenAI response:", reply);
 
     res.json({ reply });
   } catch (error) {
