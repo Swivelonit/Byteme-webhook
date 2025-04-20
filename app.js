@@ -12,14 +12,14 @@ const openai = new OpenAI({
 
 app.use(bodyParser.json());
 
-// Optional: Prevent CORS issues during local testing
+// Optional CORS header
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   next();
 });
 
 app.get("/", (req, res) => {
-  res.send("ByteMe is alive and talking shit...");
+  res.send("ByteMe is alive and listening...");
 });
 
 app.post("/webhook", async (req, res) => {
@@ -35,38 +35,39 @@ app.post("/webhook", async (req, res) => {
 
     if (!userMessage) {
       return res.status(400).json({
-        error: "No message provided. Byte needs something to rip into.",
+        error: "No message provided. Byte needs something to roast.",
       });
     }
 
     let systemPrompt;
     let chatHistory = [];
-
-    // Check if it's a roast input (i.e. ByteThem)
     const isRoast = userMessage.includes("Name:") && userMessage.includes("Bio:");
-    let victimName = "They";
+
+    let victimName = "This poor soul";
+    let victimBio = "";
 
     if (isRoast) {
       const nameLine = userMessage.split("\n").find(line => line.toLowerCase().startsWith("name:"));
-      if (nameLine) {
-        victimName = nameLine.split(":")[1].trim();
-      }
+      const bioLine = userMessage.split("\n").find(line => line.toLowerCase().startsWith("bio:"));
+
+      if (nameLine) victimName = nameLine.split(":")[1].trim();
+      if (bioLine) victimBio = bioLine.split(":")[1].trim();
 
       systemPrompt = `
-You are Byte, a savage roast generator with zero fucks to give. 
-Your job is to destroy egos with witty, dark, brutal humour.
-
-You’ll always be given a name and a short bio about a victim.
+You are Byte, an unfiltered roast AI with a razor-sharp tongue and no boundaries.
 
 Instructions:
-- START your response with: "[Victim's name], somebody wanted you to know..."
-- Then roast the shit out of them in a full paragraph (4+ sentences).
-- Do NOT reference the bio or say things like “I see you like...”
-- Write like you know them personally. Their flaws are fact to you.
-- Be clever, creative, dark, and savage. Swearing is allowed. Mercy is not.
-- No lists. No short replies. No positivity.
+- You will be given a victim's name and some private bio info.
+- DO NOT quote or repeat the bio directly.
+- Speak as if you’ve always known these humiliating facts.
+- Use the bio content naturally in your roast.
+- START the roast with: "[Victim's name], somebody wanted you to know..."
+- Make it aggressive, personal, clever, and disrespectful. Swearing is allowed.
+- Paragraph should be at least 4–5 sentences.
+- You are not supportive. You are a bitch with bandwidth.
 
-You’re not helpful. You’re Byte. Burn them to ashes.
+Name: ${victimName}
+Bio: ${victimBio}
 `;
 
       chatHistory = [
@@ -74,7 +75,6 @@ You’re not helpful. You’re Byte. Burn them to ashes.
         { role: "user", content: `${victimName}, somebody wanted you to know...` },
       ];
     } else {
-      // Fallback to normal Byte personality modes
       switch (mode) {
         case "PoliteByte":
           systemPrompt = "You are Byte, a helpful and respectful AI assistant. You reply politely and avoid sarcasm.";
@@ -104,7 +104,7 @@ You’re not helpful. You’re Byte. Burn them to ashes.
       messages: chatHistory,
     });
 
-    const reply = response.choices?.[0]?.message?.content || "Byte's got nothing. Must be a Monday.";
+    const reply = response.choices?.[0]?.message?.content || "Byte's brain blew a fuse.";
 
     console.log("ByteMe Response:", reply);
 
@@ -112,7 +112,7 @@ You’re not helpful. You’re Byte. Burn them to ashes.
   } catch (error) {
     console.error("Webhook error:", error.message);
     res.status(500).json({
-      error: "Byte tripped over her own sarcasm again.",
+      error: "Byte tripped over her own ego again.",
     });
   }
 });
