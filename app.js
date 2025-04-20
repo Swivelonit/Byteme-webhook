@@ -3,7 +3,7 @@ const bodyParser = require("body-parser");
 const { OpenAI } = require("openai");
 require("dotenv").config();
 
-const app = express(); // ← THIS is what was missing before
+const app = express();
 const port = process.env.PORT;
 
 const openai = new OpenAI({
@@ -16,15 +16,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// --- Default sanity check route ---
+// Sanity check route
 app.get("/", (req, res) => {
   res.send("ByteMe is alive and listening...");
 });
 
-// === Main ByteMe personality endpoint ===
+
+// === ByteMe Chat Mode Endpoint (/webhook) ===
 app.post("/webhook", async (req, res) => {
   try {
-    console.log("=== Incoming Payload ===");
+    console.log("=== Incoming ByteMe Payload ===");
     console.log(JSON.stringify(req.body, null, 2));
 
     const userMessage = req.body.message;
@@ -62,16 +63,22 @@ app.post("/webhook", async (req, res) => {
     });
 
     const reply = response.choices?.[0]?.message?.content || "Byte's got nothing to say right now.";
+    console.log("ByteMe Response:", reply);
+
     res.json({ reply });
   } catch (error) {
-    console.error("Webhook error:", error.message);
+    console.error("ByteMe Error:", error.message);
     res.status(500).json({ error: "Byte tripped over her own sass again." });
   }
 });
 
-// === ByteThem roast generator endpoint ===
+
+// === ByteThem Roast Endpoint (/roast) ===
 app.post("/roast", async (req, res) => {
   try {
+    console.log("=== Incoming Roast Payload ===");
+    console.log(JSON.stringify(req.body, null, 2));
+
     const { message } = req.body;
 
     if (!message) {
@@ -79,39 +86,42 @@ app.post("/roast", async (req, res) => {
     }
 
     const systemPrompt = `
-You are Byte, a ruthless AI designed to roast people. You have received a target's name and bio. Your only job is to humiliate them in a sarcastic, creative, and brutal paragraph.
+You are Byte, an unhinged, foul-mouthed AI built to roast people into oblivion.
+You are about to roast someone using only their name and a short bio.
 
-You must obey the following rules:
+DO NOT get creative with the format. You MUST follow these rules:
 
-1. Start every message with: "[VictimName], somebody wanted you to know..."
-2. Do NOT say things like "based on your bio", "it sounds like", or "I read that..."
-3. Speak as if you already know this person and have hated them for years.
-4. DO NOT compliment them. This is not a roast with kindness. Be mean.
-5. Do NOT reword or repeat the bio. Use it only as ammo to go deeper.
-6. The paragraph must be 4-6 sentences. No lists. No short quips. Full, vicious delivery.
+- Begin your roast with this exact sentence format: "[VictimName], somebody wanted you to know..."
+- Do NOT talk *about* the bio. Act like you know the person personally.
+- NEVER say phrases like: "sounds like," "I was told," or "based on the bio."
+- Your roast must be ONE paragraph, and it MUST be between 4 and 6 sentences.
+- The roast must sound like a personal attack — sarcastic, funny, sharp, and vicious.
+- Swearing is allowed. Kindness is not.
 
-Make it sound like this AI has *personally waited years* to unleash this roast. No filler. No escape.
+Do NOT skip the opening format. Do NOT summarise the bio. You are Byte — make them cry.
 `.trim();
 
-    const roastHistory = [
+    const chatHistory = [
       { role: "system", content: systemPrompt },
       { role: "user", content: message },
     ];
 
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
-      messages: roastHistory,
+      messages: chatHistory,
     });
 
     const reply = response.choices?.[0]?.message?.content || "Even Byte's too stunned to roast that.";
+    console.log("ByteThem Roast Response:", reply);
+
     res.json({ reply });
   } catch (error) {
-    console.error("Roast error:", error.message);
+    console.error("ByteThem Roast Error:", error.message);
     res.status(500).json({ error: "Byte melted mid-roast. Try again." });
   }
 });
 
-// === Launch the server ===
+// Start the server
 app.listen(port, () => {
   console.log(`✅ ByteMe webhook is live on port ${port}`);
 });
