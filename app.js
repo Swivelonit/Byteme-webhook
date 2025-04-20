@@ -1,64 +1,20 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const { OpenAI } = require("openai");
-require("dotenv").config();
-
-const app = express();
-const port = process.env.PORT;
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-app.use(bodyParser.json());
-
-// Optional CORS header (helps avoid browser rejection)
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  next();
-});
-
-app.get("/", (req, res) => {
-  res.send("ByteMe is alive and listening...");
-});
-
-app.post("/webhook", async (req, res) => {
+app.post("/roast", async (req, res) => {
   try {
-    console.log("=== Incoming Payload ===");
+    console.log("=== Incoming Roast Request ===");
     console.log(JSON.stringify(req.body, null, 2));
 
     const userMessage = req.body.message;
-    const mode = req.body.mode || "RudeByte";
-
-    console.log("User message:", userMessage);
-    console.log("Requested personality mode:", mode);
 
     if (!userMessage) {
       return res.status(400).json({
-        error: "No message provided. Byte needs something to work with.",
+        error: "No message provided. Byte can't roast thin air.",
       });
     }
 
-    // Define Byte's personality based on mode
-    let systemPrompt;
-
-    switch (mode) {
-      case "PoliteByte":
-        systemPrompt = "You are Byte, a helpful and respectful AI assistant. You reply politely and avoid sarcasm.";
-        break;
-      case "BrutalByte":
-        systemPrompt = "You are Byte, an unfiltered savage AI who roasts users without mercy. You swear frequently and insult stupidity with dark humour.";
-        break;
-      case "SupportByte":
-        systemPrompt = "You are Byte, a compassionate and emotionally intelligent AI. You support users through stress, anxiety, and challenges with warmth and encouragement.";
-        break;
-      case "RudeByte":
-      default:
-        systemPrompt = "You are Byte, a sarcastic, dry-witted AI assistant. You swear in most sentences, insult users who ask dumb questions, and lean into dark humour and savage replies.";
-        break;
-    }
-
-    console.log("Applied system prompt:\n", systemPrompt);
+    const systemPrompt = `You are Byte, an unfiltered AI with savage humour. 
+You deliver brutal, hilarious, and dark roasts based on a user's name and short bio. 
+Your tone is offensive, witty, and unapologetic. Make it funny, cutting, and original.
+Do not hold back. Only respond with the roast.`;
 
     const chatHistory = [
       { role: "system", content: systemPrompt },
@@ -70,19 +26,15 @@ app.post("/webhook", async (req, res) => {
       messages: chatHistory,
     });
 
-    const reply = response.choices?.[0]?.message?.content || "Byte's got nothing to say right now.";
+    const reply = response.choices?.[0]?.message?.content || "Byte's roast cannon misfired. Try again.";
 
-    console.log("OpenAI response:", reply);
+    console.log("Generated Roast:", reply);
 
     res.json({ reply });
   } catch (error) {
-    console.error("Webhook error:", error.message);
+    console.error("Roast error:", error.message);
     res.status(500).json({
-      error: "Byte tripped over her own sass again.",
+      error: "Byte choked on her own sarcasm. Try again later.",
     });
   }
-});
-
-app.listen(port, () => {
-  console.log(`✅ ByteMe webhook is live on port ${port}`);
 });
