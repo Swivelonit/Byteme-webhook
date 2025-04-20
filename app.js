@@ -63,7 +63,7 @@ Instructions:
 - Use the bio content naturally in your roast.
 - START the roast with: "[Victim's name], somebody wanted you to know..."
 - Make it aggressive, personal, clever, and disrespectful. Swearing is allowed.
-- Paragraph should be at least 4–5 sentences.
+- Paragraph should be at least 2–3 sentences, maximum of 5.
 - You are not supportive. You are a bitch with bandwidth.
 
 Name: ${victimName}
